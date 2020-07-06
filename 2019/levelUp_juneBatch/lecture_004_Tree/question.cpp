@@ -1,5 +1,6 @@
 #include <iostream>
 #include <vector>
+#include <stack>
 using namespace std;
 
 class TreeNode
@@ -255,3 +256,235 @@ TreeNode *lowestCommonAncestor(TreeNode *root, TreeNode *p, TreeNode *q)
     lowestCommonAncestor_(root, p, q);
     return lca;
 }
+
+//Letcode 173.
+class BSTIterator
+{
+public:
+    stack<TreeNode *> st;
+
+    BSTIterator(TreeNode *root)
+    {
+        insertLeftMost(root);
+    }
+
+    void insertLeftMost(TreeNode *root)
+    {
+        TreeNode *curr = root;
+        while (curr != nullptr)
+        {
+            st.push(curr);
+            curr = curr->left;
+        }
+    }
+
+    int next()
+    {
+        TreeNode *rnode = st.top();
+        st.pop();
+        insertLeftMost(rnode->right);
+
+        return rnode->val;
+    }
+
+    bool hasNext()
+    {
+        return st.size() != 0;
+    }
+
+    // while(obj.hasNext()) cout<<obj.next()<<endl;
+};
+
+// https://practice.geeksforgeeks.org/problems/binary-tree-to-dll/1
+
+TreeNode *prevDLL = nullptr, *head = nullptr;
+void DLL(TreeNode *node)
+{
+    if (node == nullptr)
+        return;
+
+    DLL(node->left);
+    if (head == nullptr)
+        head = node;
+    else
+    {
+        prevDLL->right = node;
+        node->left = prevDLL;
+    }
+
+    prevDLL = node;
+    DLL(node->right);
+}
+
+TreeNode *bToDLL(TreeNode *root)
+{
+    prevDLL = nullptr;
+    head = nullptr;
+    DLL(root);
+    return head;
+}
+
+//Leetcode : 426
+
+TreeNode *treeToDoublyList(TreeNode *root)
+{
+    if (root == nullptr)
+        return root;
+
+    prevDLL = nullptr;
+    head = nullptr;
+    DLL(root);
+
+    prevDLL->right = head;
+    head->left = prevDLL;
+
+    return head;
+}
+
+//Leetcode : 105
+TreeNode *buildTree(vector<int> &preorder, int psi, int pei, vector<int> &inorder, int isi, int iei) // si=starting index, ei = end index.
+{
+    if (psi > pei)
+        return nullptr;
+
+    TreeNode *node = new TreeNode(preorder[psi]);
+
+    int idx = isi;
+    while (inorder[idx] != preorder[psi])
+        idx++;
+
+    int tel = idx - isi;
+
+    node->left = buildTree(preorder, psi + 1, psi + tel, inorder, isi, idx - 1);
+    node->right = buildTree(preorder, psi + tel + 1, pei, inorder, idx + 1, iei);
+
+    return node;
+}
+
+TreeNode *buildTree(vector<int> &preorder, vector<int> &inorder)
+{
+    int n = preorder.size();
+    return buildTree(preorder, 0, n - 1, inorder, 0, n - 1);
+}
+
+//Leetcode : 106
+TreeNode *buildTree(vector<int> &postorder, int psi, int pei, vector<int> &inorder, int isi, int iei) // si=starting index, ei = end index.
+{
+    if (psi > pei)
+        return nullptr;
+
+    TreeNode *node = new TreeNode(postorder[pei]);
+
+    int idx = isi;
+    while (inorder[idx] != postorder[pei])
+        idx++;
+
+    int tel = idx - isi;
+
+    node->left = buildTree(postorder, psi, psi + tel - 1, inorder, isi, idx - 1);
+    node->right = buildTree(postorder, psi + tel, pei - 1, inorder, idx + 1, iei);
+
+    return node;
+}
+
+TreeNode *buildTree(vector<int> &inorder, vector<int> &postorder)
+{
+    int n = inorder.size();
+    return buildTree(postorder, 0, n - 1, inorder, 0, n - 1);
+}
+
+//Leetcode 889.
+
+TreeNode *buildTree(vector<int> &preorder, int psi, int pei, vector<int> &postorder, int ppsi, int ppei) // si=starting index, ei = end index.
+{
+    if (psi > pei)
+        return nullptr;
+
+    if (psi == pei)
+        return new TreeNode(preorder[psi]);
+
+    TreeNode *node = new TreeNode(preorder[psi]);
+    int idx = ppsi;
+    while (postorder[idx] != preorder[psi + 1])
+        idx++;
+
+    int tel = idx - ppsi + 1;
+
+    node->left = buildTree(preorder, psi + 1, psi + tel, postorder, ppsi, idx);
+    node->right = buildTree(preorder, psi + tel + 1, pei, postorder, idx + 1, ppei - 1);
+
+    return node;
+}
+
+TreeNode *constructFromPrePost(vector<int> &pre, vector<int> &post)
+{
+    int n = pre.size();
+    return buildTree(pre, 0, n - 1, post, 0, n - 1);
+}
+
+// -1 : need a camera.
+//  0 : is a camera
+//  1 : dosen't need a camera.
+
+int camera = 0;
+int minCameraCover_(TreeNode *root)
+{
+    if (root == nullptr)
+        return 1;
+    if (root->left == nullptr && root->right == nullptr)
+        return -1;
+
+    int lans = minCameraCover_(root->left);
+    int rans = minCameraCover_(root->right);
+
+    if (lans == -1 || rans == -1)
+    {
+        camera++;
+        return 0;
+    }
+    else if (lans == 0 || rans == 0)
+        return 1;
+
+    return -1;
+}
+
+int minCameraCover(TreeNode *root)
+{
+    if (root = nullptr)
+        return 0;
+
+    if (minCameraCover_(root) == -1)
+        camera++;
+
+    return camera;
+}
+
+//Leetcode 230
+
+void leftMost(TreeNode *node, stack<TreeNode *> &st)
+{
+    while (node != nullptr)
+    {
+        st.push(node);
+        node = node->left;
+    }
+}
+
+int kthSmallest(TreeNode *root, int k)
+{
+    stack<TreeNode *> st;
+    leftMost(root, st);
+
+    int ans = -1;
+    while (k-- > 0)
+    {
+        TreeNode *rnode = st.top();
+        st.pop();
+        leftMost(rnode->right, st);
+        
+        ans = rnode->val;
+    }
+    return ans;
+}
+
+//Leetcode 662
